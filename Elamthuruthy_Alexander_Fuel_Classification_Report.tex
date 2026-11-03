@@ -1,0 +1,309 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage[margin = 0.5in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{5}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{longtable,booktabs,array}
+\newcounter{none} % for unnumbered tables
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+\usepackage{titling}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  colorlinks=true,
+  linkcolor={Maroon},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={blue},
+  pdfcreator={LaTeX via pandoc}}
+
+\author{}
+\date{\vspace{-2.5em}}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{\fill}
+
+{\fontsize{24pt}{28pt}\selectfont \textbf{Classifying Power Plant Fuel Types\\[0.3em] via Emissions Fingerprinting}}
+
+\vspace{1.5em}
+
+{\large \textit{A Supervised Gaussian Naive Bayes Analysis of 2007 EPA eGRID Data}}
+
+\vspace{3em}
+
+{\Large \textbf{Alexander Elamthuruthy}}
+
+\vspace*{\fill}
+\end{titlepage}
+
+\newpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\section{Summary}\label{summary}
+
+Identifying the generation source of power facilities is critical for
+emissions monitoring, environmental compliance, and regional grid
+modeling. This study evaluates whether a power plant's primary fossil
+fuel type (Coal, Natural Gas, Oil, or Other Fossil) can be classified
+strictly through its annual output of four core air emissions:
+\(\text{CO}_2\), \(\text{SO}_2\), \(\text{NO}_x\), and \(\text{CH}_4\).
+
+Using plant-level records from the EPA's Emissions \& Generation
+Resource Integrated Database (eGRID2007), raw skewed emissions features
+were normalized via a \(\log(1 + x)\) transformation to align with
+Gaussian distributional assumptions. A Gaussian Naive Bayes model
+trained on a 70/30 split achieved an overall test accuracy of 77.6\%.
+The classifier demonstrated strong predictive capability in isolating
+coal-fired generation due to pronounced \(\text{SO}_2\) profiles, while
+highlighting the vulnerability of probabilistic classifiers to severe
+real-world class imbalances when distinguishing minority fuel
+categories.
+
+\section{Description of the Data}\label{description-of-the-data}
+
+This data set belongs to the Agriculture/Environment/Ecology/Climate
+data area. Specifically, it provides data about the environmental
+characteristics for most of the electric power generated in the United
+states for the year 2007. The data includes emissions, emission rates,
+generation, heat input, resource mix, and may other attributes.
+
+The objective of this study is to determine the extent to which a power
+plant's primary fuel source can be identified solely through its
+emission fingerprint. This research seeks to quantify the predictive
+power of \(NO_x\), \(SO_2\), \(CO_2\), and \(CH_4\) outputs in
+distinguishing between the different fuel sources used at power plants.
+
+Data for this analysis was sourced from the U.S. Environmental
+Protection Agency's (EPA) Emissions \& Generation Resource Integrated
+Database (eGRID). Specifically, observations were extracted from the
+2007 plant-level dataset (PLNT07), which compiles annual environmental,
+operational, and generation metrics across power facilities operating
+within the United States.
+
+For this study we will be using the variables
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{PLFUELCT}: Primary Fossil Fuel Category, the categorical
+  target variable (Coal, Gas, Oil, or Other Fossil).
+\item
+  \textbf{PLCO2AN}: Annual \(CO_2\) Emissions: Plant Annual carbon
+  dioxide emitted (tons).
+\item
+  \textbf{PLSO2AN}: Annual \(SO_2\) Emissions: Plant Annual sulfur
+  dioxide emitted (tons).
+\item
+  \textbf{PLNOXAN}: Annual \(NO_x\) Emissions: Plant Annual nitrogen
+  oxides emitted (tons).
+\item
+  \textbf{PLCH4AN}: Annual \(CH_4\) Emissions: Plant Annual methane
+  emitted (tons).
+\end{itemize}
+
+\section{Analysis \& Discussion}\label{analysis-discussion}
+
+To find the predictive power of the emissions a Naive Bayes model was
+used for classification. The response variable was PLFUELCT, the primary
+fossil fuel used at the plant that had a value of either Coal, Gas, Oil,
+or Other Fossil Fuel.
+
+The Predictors were:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{PLCO2AN}: Annual \(CO_2\) Emissions
+\item
+  \textbf{PLSO2AN}: Annual \(SO_2\) Emissions
+\item
+  \textbf{PLNOXAN}: Annual \(NO_x\) Emissions
+\item
+  \textbf{PLCH4AN}: Annual \(CH_4\) Emissions
+\end{itemize}
+
+\begin{longtable}[]{@{}
+  >{\centering\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1392}}
+  >{\centering\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2152}}
+  >{\centering\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2152}}
+  >{\centering\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2152}}
+  >{\centering\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2152}}@{}}
+\caption{Plant means by Fuel Category}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\centering
+PLFUELCT
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Avg CO2 (Tons)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Avg SO2 (Tons)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Avg NOx (Tons)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Avg CH4 (Tons)
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\centering
+PLFUELCT
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Avg CO2 (Tons)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Avg SO2 (Tons)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Avg NOx (Tons)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Avg CH4 (Tons)
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+COAL & 3782559 & 15851 & 5536 & 87768 \\
+GAS & 292271 & 41.98 & 153.7 & 11933 \\
+OFSL & 117629 & 112 & 219.5 & 9103 \\
+OIL & 48807 & 240.9 & 94.67 & 3467 \\
+\end{longtable}
+
+As evidenced by the summary statistics in Table 1, the raw emission
+means show a massive difference in scale. For example, the average
+\(CO_{2}\) output for Coal plants is measured in the millions of tons,
+while the corresponding \(SO_{2}\) and \(NO_{x}\) averages are much
+smaller in comparison. This extreme variance creates a heavily
+right-skewed distribution that violates the fundamental assumptions of a
+Gaussian Naive Bayes classifier. To address this, we applied a log
+transformation (\(log1p\)) to all emission features.
+
+\begin{center}\includegraphics{./figures/unnamed-chunk-3-1} \end{center}
+
+Looking at the violin plot we can see the distribution of data values
+for all the emissions based on the fuel used at a plant. When looking at
+the plots we can predict that the model will be very accurate at
+identifying Coal due to the separation of coal from the other fuels in
+the \(SO_2\) plot. We can also predict that the model may struggle with
+predicting oil due to the similar shape is has in all four of the plots
+
+After cleaning the data and performing the log transformation, the data
+was split into a training set and a test set, the training set holding
+70\% of the data with the test set holding the other 30\%.
+
+After fitting a model with the training set, we used said model to get
+predictions of what the fossil fuel type should be based off of the
+emissions. The predicted values were then compared to the test set in a
+confusion matrix.
+
+\begin{center}\includegraphics[width=0.5\textwidth]{./figures/unnamed-chunk-5-1} \end{center}
+
+The model achieved an overall classification accuracy of 77.65\%. While
+this figure suggests a generally effective model, a deeper examination
+of the confusion matrix reveals significant differences in performance
+across different fuel categories.
+
+The model demonstrated its highest reliability in identifying Coal,
+strengthening the prediction that the difference in \(SO_2\) compared to
+the other fuels would make it identifiable. However, the model struggled
+significantly with the remaining categories, most notably Other Fossil
+Fuel (OFSL), which yielded a 0\% success rate.
+
+This failure is primarily attributed to Representational Bias within the
+dataset. As shown in the matrix, the Gas category contains over 300
+observations, whereas OFSL contains fewer than 15. In a Gaussian Naive
+Bayes framework, this imbalance causes the model to have a very poorly
+defined ``bell curve'' for rare classes, making it mathematically more
+likely to default to a more frequent class like Gas or Coal when
+emissions data is ambiguous.
+
+Consequently, while the model serves as a tool for identifying
+high-emission coal facilities, its lack of sensitivity toward fuel types
+with similar emissions makes it an unreliable standalone predictor for
+the broader fuel mix.
+
+\newpage
+
+\section{Citations}\label{citations}
+
+U.S. Environmental Protection Agency (EPA). Emissions \& Generation
+Resource Integrated Database (eGRID), 2007 Plant Data. Washington, DC:
+U.S. EPA.
+
+\end{document}

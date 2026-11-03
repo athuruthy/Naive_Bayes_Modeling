@@ -1,0 +1,273 @@
+---
+output:
+  pdf_document:
+    highlight: haddock
+    keep_tex: yes
+    latex_engine: xelatex
+    number_sections: yes
+    # toc: yes
+    df_print: paged
+header-includes:
+- \usepackage{booktabs}
+- \usepackage{longtable}
+- \usepackage{array}
+- \usepackage{multirow}
+- \usepackage{wrapfig}
+- \usepackage{float}
+- \usepackage{colortbl}
+- \usepackage{pdflscape}
+- \usepackage{tabu}
+- \usepackage{threeparttable}
+- \usepackage{threeparttablex}
+- \usepackage[normalem]{ulem}
+- \usepackage{makecell}
+- \usepackage{xcolor}
+- \usepackage{titling}
+geometry: margin = 0.5in
+editor_options:
+  chunk_output_type: console
+urlcolor: blue
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_file = "Elamthuruthy_Alexander_Fuel_Classification_Report.pdf") })
+---
+
+
+
+
+
+\begin{titlepage}
+\centering
+\vspace*{\fill}
+
+{\fontsize{24pt}{28pt}\selectfont \textbf{Classifying Power Plant Fuel Types\\[0.3em] via Emissions Fingerprinting}}
+
+\vspace{1.5em}
+
+{\large \textit{A Supervised Gaussian Naive Bayes Analysis of 2007 EPA eGRID Data}}
+
+\vspace{3em}
+
+{\Large \textbf{Alexander Elamthuruthy}}
+
+\vspace*{\fill}
+\end{titlepage}
+
+\newpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+# Summary
+
+Identifying the generation source of power facilities is critical for emissions monitoring, environmental compliance, and regional grid modeling. This study evaluates whether a power plant’s primary fossil fuel type (Coal, Natural Gas, Oil, or Other Fossil) can be classified strictly through its annual output of four core air emissions: $\text{CO}_2$, $\text{SO}_2$, $\text{NO}_x$, and $\text{CH}_4$.   
+
+Using plant-level records from the EPA’s Emissions & Generation Resource Integrated Database (eGRID2007), raw skewed emissions features were normalized via a $\log(1 + x)$ transformation to align with Gaussian distributional assumptions. A Gaussian Naive Bayes model trained on a 70/30 split achieved an overall test accuracy of 77.6%. The classifier demonstrated strong predictive capability in isolating coal-fired generation due to pronounced $\text{SO}_2$ profiles, while highlighting the vulnerability of probabilistic classifiers to severe real-world class imbalances when distinguishing minority fuel categories.
+
+
+
+```{r setup, include=FALSE}
+# This is the setup chunk
+#  Here you can set global options for the entire document
+
+library(knitr)
+library(rmarkdown)
+
+knitr::opts_chunk$set(echo = TRUE, 
+                      comment = NA, 
+                      fig.path = "./figures/",  # Store all figures in relative path
+                      fig.align = "center",
+                      fig.width = 7,
+                      fig.height = 7,
+                      message = FALSE, # Turn off load messages
+                      warning = FALSE # Turn off warnings,
+                      )
+
+# You should set your working directory at the very beginning of your R Markdown file
+setwd("~/Documents/Personal_Projects/Power_plant_classification")
+
+
+# You should load all of the libraries that you plan to use here unless you plan
+#  on using the notation library_name::function_name()
+
+library(e1071)
+library(caret)
+library(ggplot2)
+library(cowplot)
+library(tidyr)
+library(dplyr)
+library(pander)
+```
+
+
+# Description of the Data
+This data set belongs to the Agriculture/Environment/Ecology/Climate data area. Specifically, it provides data about the environmental characteristics for most of the electric power generated in the United states for the year 2007. The data includes emissions, emission rates, generation, heat input, resource mix, and may other attributes.
+
+The objective of this study is to determine the extent to which a power plant’s primary fuel source can be identified solely through its emission fingerprint. This research seeks to quantify the predictive power of $NO_x$, $SO_2$, $CO_2$, and $CH_4$ outputs in distinguishing between the different fuel sources used at power plants.
+
+Data for this analysis was sourced from the U.S. Environmental Protection Agency’s (EPA) Emissions & Generation Resource Integrated Database (eGRID). Specifically, observations were extracted from the 2007 plant-level dataset (PLNT07), which compiles annual environmental, operational, and generation metrics across power facilities operating within the United States.
+
+
+For this study we will be using the variables 
+
+* **PLFUELCT**: Primary Fossil Fuel Category, the categorical target variable (Coal, Gas, Oil, or Other Fossil). 
+* **PLCO2AN**: Annual $CO_2$ Emissions: Plant Annual carbon dioxide emitted (tons). 
+* **PLSO2AN**: Annual $SO_2$ Emissions: Plant Annual sulfur dioxide emitted (tons). 
+* **PLNOXAN**: Annual $NO_x$ Emissions: Plant Annual nitrogen oxides emitted (tons). 
+* **PLCH4AN**: Annual $CH_4$ Emissions: Plant Annual methane emitted (tons).
+
+
+# Analysis & Discussion
+To find the predictive power of the emissions a Naive Bayes model was used for classification. The response variable was PLFUELCT, the primary fossil fuel used at the plant that had a value of either Coal, Gas, Oil, or Other Fossil Fuel.
+
+The Predictors were: 
+
+* **PLCO2AN**: Annual $CO_2$ Emissions 
+* **PLSO2AN**: Annual $SO_2$ Emissions 
+* **PLNOXAN**: Annual $NO_x$ Emissions 
+* **PLCH4AN**: Annual $CH_4$ Emissions 
+
+```{r echo=FALSE, out.width="0.5\\textwidth", fig.pos="h"}
+orig_data <- read.csv("eGRID2007_plant.csv")
+
+data <- orig_data[-c(1:3), ] 
+colnames(data) <- data[1, ]
+data <- data[-1, ]
+
+data <- data[which(data$PLFUELCT != ""), ]
+data$PLFUELCT <- as.factor(data$PLFUELCT)
+
+data$PLSO2AN <- gsub(",", "", data$PLSO2AN)
+data$PLSO2AN <- as.numeric(data$PLSO2AN)
+
+data$PLNOXAN <- gsub(",", "", data$PLNOXAN)
+data$PLNOXAN <- as.numeric(data$PLNOXAN)
+
+data$PLCO2AN <- gsub(",", "", data$PLCO2AN)
+data$PLCO2AN <- as.numeric(data$PLCO2AN)
+
+data$PLCH4AN <- gsub(",", "", data$PLCH4AN)
+data$PLCH4AN <- as.numeric(data$PLCH4AN)
+
+summary_stats <- data %>%
+  group_by(PLFUELCT) %>%
+  summarize(
+    "Avg CO2 (Tons)" = mean(PLCO2AN),
+    "Avg SO2 (Tons)" = mean(PLSO2AN),
+    "Avg NOx (Tons)" = mean(PLNOXAN),
+    "Avg CH4 (Tons)" = mean(PLCH4AN),
+  )
+
+summary_stats %>%  
+  pander(caption = "Plant means by Fuel Category")
+
+```
+
+As evidenced by the summary statistics in Table 1, the raw emission means show a massive difference in scale. For example, the average $CO_{2}$ output for Coal plants is measured in the millions of tons, while the corresponding $SO_{2}$ and $NO_{x}$ averages are much smaller in comparison. This extreme variance creates a heavily right-skewed distribution that violates the fundamental assumptions of a Gaussian Naive Bayes classifier. To address this, we applied a log transformation ($log1p$) to all emission features.
+
+
+```{r echo=FALSE}
+data <- orig_data[-c(1:3), ] 
+colnames(data) <- data[1, ]
+data <- data[-1, ]
+
+data <- data[which(data$PLFUELCT != ""), ]
+data$PLFUELCT <- as.factor(data$PLFUELCT)
+
+data$PLSO2AN <- gsub(",", "", data$PLSO2AN)
+data$PLSO2AN <- log1p(as.numeric(data$PLSO2AN))
+
+data$PLNOXAN <- gsub(",", "", data$PLNOXAN)
+data$PLNOXAN <- log1p(as.numeric(data$PLNOXAN))
+
+data$PLCO2AN <- gsub(",", "", data$PLCO2AN)
+data$PLCO2AN <- log1p(as.numeric(data$PLCO2AN))
+
+data$PLCH4AN <- gsub(",", "", data$PLCH4AN)
+data$PLCH4AN <- log1p(as.numeric(data$PLCH4AN))
+```
+
+
+
+```{r echo=FALSE}
+plot_data <- data %>%
+  select(PLFUELCT, PLNOXAN, PLSO2AN, PLCO2AN, PLCH4AN) %>%
+  pivot_longer(
+    cols = c(PLNOXAN, PLSO2AN, PLCO2AN, PLCH4AN), 
+    names_to = "Emission_Type", 
+    values_to = "Amount"
+  )
+
+# 2. Create the side-by-side Violin Plots
+ggplot(plot_data, aes(x = PLFUELCT, y = Amount, fill = PLFUELCT)) +
+  geom_violin(trim = FALSE, alpha = 0.7) +
+  # This creates the 3 panels next to each other
+  facet_wrap(~ Emission_Type, scales = "free_y") + 
+  # Use log scale because emissions vary by thousands of tons
+  labs(
+    title = "Emission Distributions by Fuel Type",
+    x = "Fuel Category",
+    y = "Emissions (Tons - Log Scale)",
+    fill = "Fuel"
+  ) +
+  theme(legend.position = "bottom")
+```
+
+Looking at the violin plot we can see the distribution of data values for all the emissions based on the fuel used at a plant. When looking at the plots we can predict that the model will be very accurate at identifying Coal due to the separation of coal from the other fuels in the $SO_2$ plot. We can also predict that the model may struggle with predicting oil due to the similar shape is has in all four of the plots
+
+```{r echo = FALSE}
+set.seed(123)
+index <- sample(seq_len(nrow(data)), size = 0.7 * nrow(data))
+train_data <- data[index, ]
+
+test_data <- data[-index, ]
+```
+
+
+After cleaning the data and performing the log transformation, the data was split into a training set and a test set, the training set holding 70% of the data with the test set holding the other 30%. 
+
+After fitting a model with the training set, we used said model to get predictions of what the fossil fuel type should be based off of the emissions. The predicted values were then compared to the test set in a confusion matrix.
+
+```{r echo = FALSE, out.width="0.5\\textwidth", fig.pos="h"}
+model <- naiveBayes(as.factor(PLFUELCT) ~ PLNOXAN + PLCO2AN + PLSO2AN + PLCH4AN, data = train_data)
+
+predict_data <- test_data[, c("PLFUELCT", "PLNOXAN", "PLCO2AN", "PLSO2AN", "PLCH4AN")]
+
+predict <- predict(model, predict_data)
+
+c_mat <- confusionMatrix(predict, as.factor(test_data$PLFUELCT))
+
+cm_df <- as.data.frame(c_mat$table)
+
+# 3. Create the plot
+ggplot(data = cm_df, aes(x = Reference, y = Prediction, fill = Freq)) +
+  geom_tile(color = "white") +             # Create the heatmap boxes
+  scale_fill_gradient(low = "white", high = "red") + # Color gradient
+  geom_text(aes(label = Freq), size = 6) + # Add the actual numbers inside the boxes
+  labs(
+    title = "4x4 Confusion Matrix: Fuel Category Classification",
+    subtitle = paste0("Model Accuracy: ", round(c_mat$overall["Accuracy"] * 100, 2), "%"),
+    x = "Actual Fuel Category (Reference)",
+    y = "Predicted Fuel Category",
+    fill = "Count"
+  ) +
+  theme(
+    axis.text = element_text(size = 12, face = "bold"),
+    title = element_text(size = 14),
+    plot.subtitle = element_text(margin = margin(b = 10))
+  )
+```
+
+The model achieved an overall classification accuracy of 77.65%. While this figure suggests a generally effective model, a deeper examination of the confusion matrix reveals significant differences in performance across different fuel categories.
+
+The model demonstrated its highest reliability in identifying Coal, strengthening the prediction that the difference in $SO_2$ compared to the other fuels would make it identifiable. However, the model struggled significantly with the remaining categories, most notably Other Fossil Fuel (OFSL), which yielded a 0% success rate.
+
+This failure is primarily attributed to Representational Bias within the dataset. As shown in the matrix, the Gas category contains over 300 observations, whereas OFSL contains fewer than 15. In a Gaussian Naive Bayes framework, this imbalance causes the model to have a very poorly defined "bell curve" for rare classes, making it mathematically more likely to default to a more frequent class like Gas or Coal when emissions data is ambiguous.
+
+Consequently, while the model serves as a tool for identifying high-emission coal facilities, its lack of sensitivity toward fuel types with similar emissions makes it an unreliable standalone predictor for the broader fuel mix.
+
+\newpage
+
+# Citations
+
+U.S. Environmental Protection Agency (EPA). Emissions & Generation Resource Integrated Database (eGRID), 2007 Plant
+Data. Washington, DC: U.S. EPA.
+
