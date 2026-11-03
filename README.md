@@ -25,3 +25,9 @@ This project evaluates the extent to which a power plant's primary fossil fuel s
 ## Tech Stack
 - **Language:** R
 - **Key Packages:** `e1071` / `naivebayes`, `caret`, `ggplot2`, `dplyr`, `tidyr`, `pander`
+
+## Data Attribution
+The dataset used in this analysis was collected and published by the U.S. Environmental Protection Agency (EPA) under the Emissions & Generation Resource Integrated Database (eGRID) program. As a work of the United States government, official EPA eGRID records reside in the public domain under 17 U.S.C.
+
+## Disclaimer
+This repository represents an independent computational analysis developed for academic and portfolio demonstration purposes. It is not affiliated with, sponsored by, or endorsed by the U.S. Environmental Protection Agency (EPA). All data and analytical artifacts are provided "as is" without warranty of any kind, express or implied.
